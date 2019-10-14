@@ -1,31 +1,43 @@
 # Read the i2c Honeywell HAFBSF0200C2AX3 Flow Sensor on Raspberry Pi
 # https://www.mouser.ch/datasheet/2/187/honeywell-sensing-airflow-zephyr-haf-series-digita-740409.pdf
-# Q1 2019 Python 3.5
+# Q3 2019 Python 3.7
 
 import pigpio
 import time
 
-pi = pigpio.pi()
+pi = pigpio.pi()    # Connect to local Raspberry Pi.
 
 
 class Flow_Sensor:
     def __init__(self):
-        self.h = 1
-        self.i2c = 0x29
-        self.flow = 0
+
+        self.i2c_handle     = 1     # A number referencing an object opened by one of the following
+        self.i2c_address    = 0x29  # The address of a device on the I2C bus.
+        self.flow_value     = None  # The sensor value
 
     def read_value(self):
-        self.device = pi.i2c_open(self.h, self.i2c)
-        self.count, self.data = pi.i2c_read_device(self.device, 2)
-        pi.i2c_close(self.device)
-        self.flow = int.from_bytes(self.data, "big")
+        """
+        - opens the i2c port
+        - reads the data.
+        - Unpack the data and return it
+        count:  The number of bytes of data to be transferred.
+        data:   Data to be transmitted, a series of bytes.
+        reg:    An I2C device register. The usable registers depend on the actual device.
+        """
+        device = pi.i2c_open(self.i2c_handle, self.i2c_address)
+        count, data = pi.i2c_read_device(device, 2) # 2 = reg
+        pi.i2c_close(device)
+        self.flow_value = int.from_bytes(data, "big")
 
 
 # Example
 
 Flow = Flow_Sensor()
-
-while True:
-    Flow.read_value()
-    print(Flow.flow)
-    time.sleep(0.3)
+if __name__ == '__main__':
+    while True:
+        """
+        creates a loop and prints the value every 0.3 seconds
+        """
+        Flow.read_value()
+        print(Flow.flow_value)
+        time.sleep(0.3)
